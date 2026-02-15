@@ -56,7 +56,7 @@ class MapOverlayWidget(QWidget):
             self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         if config.overlay_force_topmost:
             set_widget_always_on_top(self)
-        apply_window_compatibility(self, config)
+        self._compat_applied = False
         self.startTimer(50)
 
         # 悬浮地图信息
@@ -125,6 +125,12 @@ class MapOverlayWidget(QWidget):
             opacity=0.0,
             visible=True,
         ))
+
+    def showEvent(self, event):
+        if not self._compat_applied:
+            apply_window_compatibility(self, Config.get())
+            self._compat_applied = True
+        super().showEvent(event)
 
 
     def set_overlay_images(self, imgs: list[Image.Image] | None):
@@ -344,4 +350,3 @@ class MapOverlayWidget(QWidget):
             self.show()
         elif not visible and self.isVisible():
             self.hide()
-

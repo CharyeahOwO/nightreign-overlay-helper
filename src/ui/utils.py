@@ -67,19 +67,18 @@ def set_dwm_excluded_from_capture(hwnd: int, excluded: bool) -> bool:
 
 
 def apply_window_compatibility(widget: QWidget, config) -> None:
-    if not getattr(config, "lossless_scaling_compat_mode", False):
-        return
     hwnd = widget.winId().__int__()
     add_flags = 0
     remove_flags = 0
+    compat_mode = getattr(config, "lossless_scaling_compat_mode", False)
     try:
         import win32con
-        add_flags |= win32con.WS_EX_NOACTIVATE | win32con.WS_EX_TOOLWINDOW
-        remove_flags |= win32con.WS_EX_APPWINDOW
-        if getattr(config, "overlay_no_redirection_bitmap", False):
-            add_flags |= win32con.WS_EX_NOREDIRECTIONBITMAP
-        if getattr(config, "overlay_input_passthrough", False):
+        if compat_mode:
+            add_flags |= win32con.WS_EX_NOACTIVATE | win32con.WS_EX_TOOLWINDOW | win32con.WS_EX_LAYERED
+            remove_flags |= win32con.WS_EX_APPWINDOW
             add_flags |= win32con.WS_EX_TRANSPARENT
+        if compat_mode and getattr(config, "overlay_no_redirection_bitmap", False):
+            add_flags |= win32con.WS_EX_NOREDIRECTIONBITMAP
     except Exception as e:
         warning(f"Error preparing window compatibility flags: {e}")
     if add_flags or remove_flags:

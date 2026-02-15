@@ -46,7 +46,7 @@ class HpOverlayWidget(QWidget):
             self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         if config.overlay_force_topmost:
             set_widget_always_on_top(self)
-        apply_window_compatibility(self, config)
+        self._compat_applied = False
         self.startTimer(50)
 
         self.hpbar_region: tuple[int] = (0, 0, 10, 10)
@@ -72,6 +72,12 @@ class HpOverlayWidget(QWidget):
 
         self.update_ui_state(HpOverlayUIState(visible=False))
         
+    def showEvent(self, event):
+        if not self._compat_applied:
+            apply_window_compatibility(self, Config.get())
+            self._compat_applied = True
+        super().showEvent(event)
+
     def update_ui_state(self, state: HpOverlayUIState):
         if state.x is not None:
             self.hpbar_region = mss_region_to_qt_region((state.x, state.y, state.w, state.h))

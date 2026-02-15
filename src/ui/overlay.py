@@ -57,20 +57,19 @@ class OverlayWidget(QWidget):
         flags = Qt.WindowType.FramelessWindowHint | Qt.WindowType.Tool
         if config.overlay_force_topmost:
             flags |= Qt.WindowType.WindowStaysOnTopHint
-        if config.lossless_scaling_compat_mode and config.overlay_input_passthrough:
-            flags |= Qt.WindowType.WindowTransparentForInput
         if config.lossless_scaling_compat_mode:
+            flags |= Qt.WindowType.WindowTransparentForInput
             flags |= Qt.WindowType.WindowDoesNotAcceptFocus
         self.setWindowFlags(flags)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         if config.lossless_scaling_compat_mode:
             self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating)
             self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        if config.lossless_scaling_compat_mode and config.overlay_input_passthrough:
+        if config.lossless_scaling_compat_mode:
             self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         if config.overlay_force_topmost:
             set_widget_always_on_top(self)
-        apply_window_compatibility(self, config)
+        self._compat_applied = False
         self.startTimer(50)
 
         self.scale = 1.0
@@ -172,6 +171,12 @@ class OverlayWidget(QWidget):
             art_progress_visible=False,
             hide_text=False,
         ))
+
+    def showEvent(self, event):
+        if not self._compat_applied:
+            apply_window_compatibility(self, Config.get())
+            self._compat_applied = True
+        super().showEvent(event)
 
     def mousePressEvent(self, event: QMouseEvent):
         if self.draggable and event.button() == Qt.MouseButton.LeftButton:
