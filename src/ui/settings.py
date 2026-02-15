@@ -20,7 +20,7 @@ from src.common import (
     ICON_PATH, load_yaml, save_yaml,
 )
 from src.logger import info, warning, error, set_log_level, INFO, DEBUG
-from src.config import Config
+from src.config import Config, CONFIG_PATH
 from src.ui.overlay import OverlayUIState, OverlayWidget
 from src.ui.map_overlay import MapOverlayWidget, MapOverlayUIState
 from src.ui.input import InputWorker, InputSettingWidget, InputSetting
@@ -536,6 +536,57 @@ class SettingsWindow(QWidget):
         hdr_processing_layout.addStretch()
         self.other_layout.addLayout(hdr_processing_layout)
 
+        line = QFrame()
+        line.setFrameShape(QFrame.Shape.HLine)
+        line.setFrameShadow(QFrame.Shadow.Sunken)
+        self.other_layout.addWidget(line)
+
+        self.other_layout.addWidget(QLabel("窗口兼容"))
+
+        lossless_scaling_compat_mode_layout = QHBoxLayout()
+        self.lossless_scaling_compat_mode_checkbox = QCheckBox("兼容无损缩放(需重启)")
+        self.lossless_scaling_compat_mode_checkbox.setChecked(False)
+        self.lossless_scaling_compat_mode_checkbox.setToolTip("用于无损缩放等兼容模式，开启后会应用额外的窗口兼容设置")
+        lossless_scaling_compat_mode_layout.addWidget(self.lossless_scaling_compat_mode_checkbox)
+        lossless_scaling_compat_mode_layout.addStretch()
+        self.other_layout.addLayout(lossless_scaling_compat_mode_layout)
+
+        overlay_force_topmost_layout = QHBoxLayout()
+        self.overlay_force_topmost_checkbox = QCheckBox("强制置顶(需重启)")
+        self.overlay_force_topmost_checkbox.setChecked(False)
+        overlay_force_topmost_layout.addWidget(self.overlay_force_topmost_checkbox)
+        overlay_force_topmost_layout.addStretch()
+        self.other_layout.addLayout(overlay_force_topmost_layout)
+
+        overlay_exclude_from_capture_layout = QHBoxLayout()
+        self.overlay_exclude_from_capture_checkbox = QCheckBox("从屏幕捕获中排除(需重启)")
+        self.overlay_exclude_from_capture_checkbox.setChecked(False)
+        self.overlay_exclude_from_capture_checkbox.setToolTip("使用 Windows 捕获排除标志，避免被录屏或截图工具捕获")
+        overlay_exclude_from_capture_layout.addWidget(self.overlay_exclude_from_capture_checkbox)
+        overlay_exclude_from_capture_layout.addStretch()
+        self.other_layout.addLayout(overlay_exclude_from_capture_layout)
+
+        overlay_no_redirection_bitmap_layout = QHBoxLayout()
+        self.overlay_no_redirection_bitmap_checkbox = QCheckBox("禁用重定向位图(需重启)")
+        self.overlay_no_redirection_bitmap_checkbox.setChecked(False)
+        overlay_no_redirection_bitmap_layout.addWidget(self.overlay_no_redirection_bitmap_checkbox)
+        overlay_no_redirection_bitmap_layout.addStretch()
+        self.other_layout.addLayout(overlay_no_redirection_bitmap_layout)
+
+        overlay_input_passthrough_layout = QHBoxLayout()
+        self.overlay_input_passthrough_checkbox = QCheckBox("鼠标穿透(需重启)")
+        self.overlay_input_passthrough_checkbox.setChecked(False)
+        overlay_input_passthrough_layout.addWidget(self.overlay_input_passthrough_checkbox)
+        overlay_input_passthrough_layout.addStretch()
+        self.other_layout.addLayout(overlay_input_passthrough_layout)
+
+        overlay_disable_shadow_layout = QHBoxLayout()
+        self.overlay_disable_shadow_checkbox = QCheckBox("禁用阴影(需重启)")
+        self.overlay_disable_shadow_checkbox.setChecked(False)
+        overlay_disable_shadow_layout.addWidget(self.overlay_disable_shadow_checkbox)
+        overlay_disable_shadow_layout.addStretch()
+        self.other_layout.addLayout(overlay_disable_shadow_layout)
+
         open_log_and_abouts_layout = QHBoxLayout()
         self.other_layout.addLayout(open_log_and_abouts_layout)
 
@@ -740,6 +791,12 @@ class SettingsWindow(QWidget):
             load_checkbox_state(self.debug_log_checkbox, data.get("debug_log_enabled", False))
             # HDR图像处理
             load_checkbox_state(self.hdr_processing_checkbox, data.get("hdr_processing_enabled", False))
+            load_checkbox_state(self.lossless_scaling_compat_mode_checkbox, config.lossless_scaling_compat_mode)
+            load_checkbox_state(self.overlay_force_topmost_checkbox, config.overlay_force_topmost)
+            load_checkbox_state(self.overlay_exclude_from_capture_checkbox, config.overlay_exclude_from_capture)
+            load_checkbox_state(self.overlay_no_redirection_bitmap_checkbox, config.overlay_no_redirection_bitmap)
+            load_checkbox_state(self.overlay_input_passthrough_checkbox, config.overlay_input_passthrough)
+            load_checkbox_state(self.overlay_disable_shadow_checkbox, config.overlay_disable_shadow)
 
             info("Settings loaded successfully")
         except Exception as e:
@@ -801,6 +858,14 @@ class SettingsWindow(QWidget):
                 "hdr_processing_enabled": self.hdr_processing_checkbox.isChecked(),
             }
             save_yaml(SETTINGS_SAVE_PATH, data)
+            config_data = load_yaml(CONFIG_PATH) if os.path.exists(CONFIG_PATH) else {}
+            config_data["lossless_scaling_compat_mode"] = self.lossless_scaling_compat_mode_checkbox.isChecked()
+            config_data["overlay_force_topmost"] = self.overlay_force_topmost_checkbox.isChecked()
+            config_data["overlay_exclude_from_capture"] = self.overlay_exclude_from_capture_checkbox.isChecked()
+            config_data["overlay_no_redirection_bitmap"] = self.overlay_no_redirection_bitmap_checkbox.isChecked()
+            config_data["overlay_input_passthrough"] = self.overlay_input_passthrough_checkbox.isChecked()
+            config_data["overlay_disable_shadow"] = self.overlay_disable_shadow_checkbox.isChecked()
+            save_yaml(CONFIG_PATH, config_data)
             info(f"Saved settings to {SETTINGS_SAVE_PATH}")
         except Exception as e:
             error(f"Failed to save settings: {e}")

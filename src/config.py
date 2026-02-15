@@ -1,10 +1,12 @@
-import yaml
 import os
+import sys
+from pathlib import Path
 from dataclasses import dataclass
 
-from .common import load_yaml
+from .common import load_yaml, save_yaml, get_appdata_path
 
-CONFIG_PATH = "config.yaml"
+CONFIG_PATH = get_appdata_path("config.yaml")
+DEFAULT_CONFIG_PATH = "config.yaml"
 
 _config: dict = {}
 _config_mtime = None
@@ -91,6 +93,18 @@ class Config:
     @staticmethod
     def get() -> 'Config':
         global _config, _config_mtime
+        config_path = Path(CONFIG_PATH)
+        default_path = Path(sys.argv[0]).resolve().parent / DEFAULT_CONFIG_PATH if getattr(sys, "frozen", False) else Path(__file__).resolve().parent.parent / DEFAULT_CONFIG_PATH
+        if not config_path.exists():
+            default_data = load_yaml(str(default_path)) if default_path.exists() else {}
+            if default_data:
+                try:
+                    save_yaml(str(config_path), default_data)
+                except Exception:
+                    pass
+            _config = default_data
+            _config_mtime = os.path.getmtime(config_path) if config_path.exists() else None
+            return Config(**_config)
         mtime = os.path.getmtime(CONFIG_PATH)
         if mtime != _config_mtime:
             _config = load_yaml(CONFIG_PATH)
