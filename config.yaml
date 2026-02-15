@@ -14,6 +14,13 @@ back_day_seconds: 10    # 后退一次缩圈时间（秒）
 
 time_scale: 1.0   # 时间流逝倍率
 
+lossless_scaling_compat_mode: false
+overlay_force_topmost: true
+overlay_exclude_from_capture: true
+overlay_no_redirection_bitmap: false
+overlay_input_passthrough: false
+overlay_disable_shadow: false
+
 template_standard_height: 30      # DAYX模板图片标准高度
 mask_lower_white: [0, 0, 200]     # DAYX模板图片白色掩码下限(BGR)
 mask_upper_white: [179, 90, 255]  # DAYX模板图片白色掩码上限(BGR)

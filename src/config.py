@@ -29,6 +29,13 @@ class Config:
 
     time_scale: float
 
+    lossless_scaling_compat_mode: bool
+    overlay_force_topmost: bool
+    overlay_exclude_from_capture: bool
+    overlay_no_redirection_bitmap: bool
+    overlay_input_passthrough: bool
+    overlay_disable_shadow: bool
+
     template_standard_height: int
     mask_lower_white: list[int]
     mask_upper_white: list[int]

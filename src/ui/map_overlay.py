@@ -16,7 +16,7 @@ import glob
 from src.common import get_readable_timedelta, get_data_path, load_yaml
 from src.config import Config
 from src.logger import info, warning, error
-from src.ui.utils import set_widget_always_on_top, is_window_in_foreground, mss_region_to_qt_region
+from src.ui.utils import set_widget_always_on_top, apply_window_compatibility, is_window_in_foreground, mss_region_to_qt_region
 from src.detector.utils import draw_text
 
 
@@ -43,14 +43,15 @@ class MapOverlayUIState:
 class MapOverlayWidget(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowFlags(
-            Qt.WindowType.FramelessWindowHint |
-            Qt.WindowType.WindowStaysOnTopHint |
-            Qt.WindowType.Tool |
-            Qt.WindowType.WindowTransparentForInput
-        )
+        config = Config.get()
+        flags = Qt.WindowType.FramelessWindowHint | Qt.WindowType.Tool | Qt.WindowType.WindowTransparentForInput
+        if config.overlay_force_topmost:
+            flags |= Qt.WindowType.WindowStaysOnTopHint
+        self.setWindowFlags(flags)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
-        set_widget_always_on_top(self)
+        if config.overlay_force_topmost:
+            set_widget_always_on_top(self)
+        apply_window_compatibility(self, config)
         self.startTimer(50)
 
         # 悬浮地图信息
@@ -78,6 +79,8 @@ class MapOverlayWidget(QWidget):
         self.vbox.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignBottom)
 
         def add_shadow(label: QLabel):
+            if config.overlay_disable_shadow:
+                return
             shadow_effect = QGraphicsDropShadowEffect(label)
             shadow_effect.setBlurRadius(5)
             shadow_effect.setOffset(2, 2)
@@ -336,6 +339,5 @@ class MapOverlayWidget(QWidget):
             self.show()
         elif not visible and self.isVisible():
             self.hide()
-
 
 

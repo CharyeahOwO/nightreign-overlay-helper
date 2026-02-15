@@ -10,7 +10,7 @@ from PyQt6.QtGui import QColor
 from src.common import APP_FULLNAME, APP_AUTHOR
 from src.config import Config
 from src.logger import info, warning, error
-from src.ui.utils import set_widget_always_on_top, mss_region_to_qt_region
+from src.ui.utils import set_widget_always_on_top, apply_window_compatibility, mss_region_to_qt_region
 
 
 @dataclass
@@ -33,14 +33,15 @@ class HpOverlayWidget(QWidget):
 
     def __init__(self):
         super().__init__()
-        self.setWindowFlags(
-            Qt.WindowType.FramelessWindowHint |
-            Qt.WindowType.WindowStaysOnTopHint |
-            Qt.WindowType.Tool |
-            Qt.WindowType.WindowTransparentForInput
-        )
+        config = Config.get()
+        flags = Qt.WindowType.FramelessWindowHint | Qt.WindowType.Tool | Qt.WindowType.WindowTransparentForInput
+        if config.overlay_force_topmost:
+            flags |= Qt.WindowType.WindowStaysOnTopHint
+        self.setWindowFlags(flags)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
-        set_widget_always_on_top(self)
+        if config.overlay_force_topmost:
+            set_widget_always_on_top(self)
+        apply_window_compatibility(self, config)
         self.startTimer(50)
 
         self.hpbar_region: tuple[int] = (0, 0, 10, 10)

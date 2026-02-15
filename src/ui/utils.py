@@ -16,6 +16,57 @@ def set_widget_always_on_top(widget: QWidget):
         warning(f"Error setting system always on top: {e}")
 
 
+def set_window_exstyle(hwnd: int, add_flags: int = 0, remove_flags: int = 0) -> bool:
+    try:
+        import win32gui
+        import win32con
+        style = win32gui.GetWindowLong(hwnd, win32con.GWL_EXSTYLE)
+        style = (style | add_flags) & ~remove_flags
+        win32gui.SetWindowLong(hwnd, win32con.GWL_EXSTYLE, style)
+        win32gui.SetWindowPos(
+            hwnd,
+            0,
+            0,
+            0,
+            0,
+            0,
+            win32con.SWP_NOMOVE | win32con.SWP_NOSIZE | win32con.SWP_NOZORDER | win32con.SWP_FRAMECHANGED,
+        )
+        return True
+    except Exception as e:
+        warning(f"Error setting window exstyle: {e}")
+        return False
+
+
+def set_window_display_affinity(hwnd: int, affinity: int) -> bool:
+    try:
+        import win32gui
+        win32gui.SetWindowDisplayAffinity(hwnd, affinity)
+        return True
+    except Exception as e:
+        warning(f"Error setting window display affinity: {e}")
+        return False
+
+
+def apply_window_compatibility(widget: QWidget, config) -> None:
+    if not getattr(config, "lossless_scaling_compat_mode", False):
+        return
+    hwnd = widget.winId().__int__()
+    add_flags = 0
+    try:
+        import win32con
+        if getattr(config, "overlay_no_redirection_bitmap", False):
+            add_flags |= win32con.WS_EX_NOREDIRECTIONBITMAP
+        if getattr(config, "overlay_input_passthrough", False):
+            add_flags |= win32con.WS_EX_TRANSPARENT
+    except Exception as e:
+        warning(f"Error preparing window compatibility flags: {e}")
+    if add_flags:
+        set_window_exstyle(hwnd, add_flags=add_flags)
+    if getattr(config, "overlay_exclude_from_capture", False):
+        set_window_display_affinity(hwnd, 0x11)
+
+
 def is_window_in_foreground(window_title: str) -> bool:
     """
     检查包含特定标题的窗口是否在 Windows 的最前面。

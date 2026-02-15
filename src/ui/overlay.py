@@ -10,7 +10,7 @@ from PyQt6.QtGui import QColor
 from src.common import APP_FULLNAME, APP_AUTHOR
 from src.config import Config
 from src.logger import info, warning, error
-from src.ui.utils import set_widget_always_on_top
+from src.ui.utils import set_widget_always_on_top, apply_window_compatibility
 
 
 INITIAL_TEXT = f"{APP_FULLNAME} (右键打开菜单)"
@@ -53,14 +53,19 @@ class OverlayWidget(QWidget):
 
     def __init__(self):
         super().__init__()
-
-        self.setWindowFlags(
-            Qt.WindowType.FramelessWindowHint |
-            Qt.WindowType.WindowStaysOnTopHint |
-            Qt.WindowType.Tool 
-        )
+        config = Config.get()
+        flags = Qt.WindowType.FramelessWindowHint | Qt.WindowType.Tool
+        if config.overlay_force_topmost:
+            flags |= Qt.WindowType.WindowStaysOnTopHint
+        if config.lossless_scaling_compat_mode and config.overlay_input_passthrough:
+            flags |= Qt.WindowType.WindowTransparentForInput
+        self.setWindowFlags(flags)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
-        set_widget_always_on_top(self)
+        if config.lossless_scaling_compat_mode and config.overlay_input_passthrough:
+            self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        if config.overlay_force_topmost:
+            set_widget_always_on_top(self)
+        apply_window_compatibility(self, config)
         self.startTimer(50)
 
         self.scale = 1.0
@@ -71,7 +76,7 @@ class OverlayWidget(QWidget):
         self.day_progress_layout.setSpacing(1)
         self.day_pbs: list[QProgressBar] = []
         for i in range(4):
-            length = Config.get().day_period_seconds[i]
+            length = config.day_period_seconds[i]
             pb = QProgressBar()
             pb.setTextVisible(False)
             pb.setRange(0, 10000)
@@ -85,11 +90,12 @@ class OverlayWidget(QWidget):
         self.map_pattern_match_text = ""
         self.day_label = QLabel()
         self.day_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        shadow_effect = QGraphicsDropShadowEffect()
-        shadow_effect.setBlurRadius(10)
-        shadow_effect.setColor(QColor(0, 0, 0, 150)) 
-        shadow_effect.setOffset(0, 0) 
-        self.day_label.setGraphicsEffect(shadow_effect)
+        if not config.overlay_disable_shadow:
+            shadow_effect = QGraphicsDropShadowEffect()
+            shadow_effect.setBlurRadius(10)
+            shadow_effect.setColor(QColor(0, 0, 0, 150)) 
+            shadow_effect.setOffset(0, 0) 
+            self.day_label.setGraphicsEffect(shadow_effect)
         self.layout.addWidget(self.day_label)
 
         self.rain_pb = QProgressBar()
@@ -99,11 +105,12 @@ class OverlayWidget(QWidget):
 
         self.rain_label = QLabel()
         self.rain_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        shadow_effect = QGraphicsDropShadowEffect()
-        shadow_effect.setBlurRadius(10)
-        shadow_effect.setColor(QColor(0, 0, 0, 150)) 
-        shadow_effect.setOffset(0, 0) 
-        self.rain_label.setGraphicsEffect(shadow_effect)
+        if not config.overlay_disable_shadow:
+            shadow_effect = QGraphicsDropShadowEffect()
+            shadow_effect.setBlurRadius(10)
+            shadow_effect.setColor(QColor(0, 0, 0, 150)) 
+            shadow_effect.setOffset(0, 0) 
+            self.rain_label.setGraphicsEffect(shadow_effect)
         self.layout.addWidget(self.rain_label)
 
         self.art_pb = QProgressBar()
@@ -114,11 +121,12 @@ class OverlayWidget(QWidget):
 
         self.art_label = QLabel()
         self.art_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        shadow_effect = QGraphicsDropShadowEffect()
-        shadow_effect.setBlurRadius(10)
-        shadow_effect.setColor(QColor(0, 0, 0, 150))
-        shadow_effect.setOffset(0, 0)
-        self.art_label.setGraphicsEffect(shadow_effect)
+        if not config.overlay_disable_shadow:
+            shadow_effect = QGraphicsDropShadowEffect()
+            shadow_effect.setBlurRadius(10)
+            shadow_effect.setColor(QColor(0, 0, 0, 150))
+            shadow_effect.setOffset(0, 0)
+            self.art_label.setGraphicsEffect(shadow_effect)
         self.layout.addWidget(self.art_label)
 
         self.layout.addStretch()
@@ -126,12 +134,12 @@ class OverlayWidget(QWidget):
         self.drag_position = QPoint()
         self.draggable = False
 
-        self.day_pb_css = Config.get().day_progress_css
-        self.day_text_css = Config.get().day_text_css
-        self.rain_pb_css = Config.get().in_rain_progress_css
-        self.rain_text_css = Config.get().in_rain_text_css
-        self.art_pb_css = Config.get().art_progress_css
-        self.art_text_css = Config.get().art_text_css
+        self.day_pb_css = config.day_progress_css
+        self.day_text_css = config.day_text_css
+        self.rain_pb_css = config.in_rain_progress_css
+        self.rain_text_css = config.in_rain_text_css
+        self.art_pb_css = config.art_progress_css
+        self.art_text_css = config.art_text_css
 
         self.visible = True
         self.only_show_when_game_foreground = False
@@ -299,4 +307,3 @@ class OverlayWidget(QWidget):
             self.art_pb.show()
         else:
             self.art_pb.hide()
-
