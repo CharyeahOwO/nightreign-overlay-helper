@@ -48,23 +48,45 @@ def set_window_display_affinity(hwnd: int, affinity: int) -> bool:
         return False
 
 
+def set_dwm_excluded_from_capture(hwnd: int, excluded: bool) -> bool:
+    try:
+        import ctypes
+
+        DWMWA_EXCLUDED_FROM_CAPTURE = 33
+        value = ctypes.c_int(1 if excluded else 0)
+        res = ctypes.windll.dwmapi.DwmSetWindowAttribute(
+            ctypes.c_void_p(hwnd),
+            ctypes.c_uint(DWMWA_EXCLUDED_FROM_CAPTURE),
+            ctypes.byref(value),
+            ctypes.sizeof(value),
+        )
+        return res == 0
+    except Exception as e:
+        warning(f"Error setting DWM excluded-from-capture: {e}")
+        return False
+
+
 def apply_window_compatibility(widget: QWidget, config) -> None:
     if not getattr(config, "lossless_scaling_compat_mode", False):
         return
     hwnd = widget.winId().__int__()
     add_flags = 0
+    remove_flags = 0
     try:
         import win32con
+        add_flags |= win32con.WS_EX_NOACTIVATE | win32con.WS_EX_TOOLWINDOW
+        remove_flags |= win32con.WS_EX_APPWINDOW
         if getattr(config, "overlay_no_redirection_bitmap", False):
             add_flags |= win32con.WS_EX_NOREDIRECTIONBITMAP
         if getattr(config, "overlay_input_passthrough", False):
             add_flags |= win32con.WS_EX_TRANSPARENT
     except Exception as e:
         warning(f"Error preparing window compatibility flags: {e}")
-    if add_flags:
-        set_window_exstyle(hwnd, add_flags=add_flags)
+    if add_flags or remove_flags:
+        set_window_exstyle(hwnd, add_flags=add_flags, remove_flags=remove_flags)
     if getattr(config, "overlay_exclude_from_capture", False):
         set_window_display_affinity(hwnd, 0x11)
+        set_dwm_excluded_from_capture(hwnd, True)
 
 
 def is_window_in_foreground(window_title: str) -> bool:

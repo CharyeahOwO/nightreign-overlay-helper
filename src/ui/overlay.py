@@ -59,8 +59,13 @@ class OverlayWidget(QWidget):
             flags |= Qt.WindowType.WindowStaysOnTopHint
         if config.lossless_scaling_compat_mode and config.overlay_input_passthrough:
             flags |= Qt.WindowType.WindowTransparentForInput
+        if config.lossless_scaling_compat_mode:
+            flags |= Qt.WindowType.WindowDoesNotAcceptFocus
         self.setWindowFlags(flags)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        if config.lossless_scaling_compat_mode:
+            self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating)
+            self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         if config.lossless_scaling_compat_mode and config.overlay_input_passthrough:
             self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         if config.overlay_force_topmost:

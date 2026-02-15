@@ -47,8 +47,13 @@ class MapOverlayWidget(QWidget):
         flags = Qt.WindowType.FramelessWindowHint | Qt.WindowType.Tool | Qt.WindowType.WindowTransparentForInput
         if config.overlay_force_topmost:
             flags |= Qt.WindowType.WindowStaysOnTopHint
+        if config.lossless_scaling_compat_mode:
+            flags |= Qt.WindowType.WindowDoesNotAcceptFocus
         self.setWindowFlags(flags)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        if config.lossless_scaling_compat_mode:
+            self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating)
+            self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         if config.overlay_force_topmost:
             set_widget_always_on_top(self)
         apply_window_compatibility(self, config)
@@ -339,5 +344,4 @@ class MapOverlayWidget(QWidget):
             self.show()
         elif not visible and self.isVisible():
             self.hide()
-
 
