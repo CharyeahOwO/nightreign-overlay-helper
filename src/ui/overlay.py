@@ -1,4 +1,4 @@
-from PyQt6.QtCore import Qt, QPoint, pyqtSignal
+from PyQt6.QtCore import Qt, QPoint, pyqtSignal, QTimer
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QProgressBar, QLabel, QHBoxLayout, QSizePolicy
 )
@@ -174,7 +174,7 @@ class OverlayWidget(QWidget):
 
     def showEvent(self, event):
         if not self._compat_applied:
-            apply_window_compatibility(self, Config.get())
+            QTimer.singleShot(100, lambda: apply_window_compatibility(self, Config.get()))
             self._compat_applied = True
         super().showEvent(event)
 
