@@ -132,6 +132,22 @@ class MapOverlayWidget(QWidget):
             self._compat_applied = True
         super().showEvent(event)
 
+    def nativeEvent(self, eventType, message):
+        if not Config.get().lossless_scaling_compat_mode:
+            return super().nativeEvent(eventType, message)
+        try:
+            if eventType in (b"windows_generic_MSG", b"windows_dispatcher_MSG"):
+                import ctypes
+                from ctypes import wintypes
+                msg = wintypes.MSG.from_address(int(message))
+                if msg.message == 0x0084:
+                    return True, -1
+                if msg.message == 0x0021:
+                    return True, 3
+        except Exception:
+            pass
+        return super().nativeEvent(eventType, message)
+
 
     def set_overlay_images(self, imgs: list[Image.Image] | None):
         self.overlay_images = imgs
